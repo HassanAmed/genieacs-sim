@@ -1,5 +1,5 @@
 "use strict";
-
+//utility function
 function node(key, attrs = {}, value = "") {
   if (Array.isArray(value)) value = value.join("");
   let attrsStr = "";

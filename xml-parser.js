@@ -1,3 +1,10 @@
+/**
+#####################################    File Description    #######################################
+
+xml parser for for simulator
+
+####################################################################################################
+ */
 "use strict";
 
 const CHAR_SINGLE_QUOTE = 39;
@@ -18,7 +25,12 @@ const STATE_LESS_THAN = 1;
 const STATE_SINGLE_QUOTE = 2;
 const STATE_DOUBLE_QUOTE = 3;
 
-
+/**
+ * @description Parse xml Declaration XML declaration contains details that prepare an XML processor
+ * to parse the XML document. It is optional, but when used, it must appear 
+ * in the first line of the XML document.
+ * @param {buffer} buffer 
+ */
 function parseXmlDeclaration(buffer) {
   for (const enc of ["utf16le", "utf8", "latin1", "ascii"]) {
     let str = buffer.toString(enc, 0, 150);
@@ -33,7 +45,10 @@ function parseXmlDeclaration(buffer) {
   }
   return null;
 }
-
+/**
+ * @description Function to Parse Xml attributes; xml elements can have attributes just like html
+ * @param {string} string 
+ */
 function parseAttrs(string) {
   const attrs = [];
   const len = string.length;
@@ -94,7 +109,10 @@ function parseAttrs(string) {
 
   return attrs;
 }
-
+/**
+ * @description Decoder to convert entities(examlpe &amp -> &) back to orignal format
+ * @param {string} string 
+ */
 function decodeEntities(string) {
   return string.replace(/&[0-9a-z#]+;/gi, match => {
     switch (match) {
@@ -127,7 +145,10 @@ function decodeEntities(string) {
     return match;
   });
 }
-
+/**
+ * @description Encode entites
+ * @param {string} string 
+ */
 function encodeEntities(string) {
   const entities = {
     "&": "&amp;",
@@ -138,7 +159,10 @@ function encodeEntities(string) {
   };
   return string.replace(/[&"'<>]/g, m => entities[m]);
 }
-
+/**
+ * @description Takes a String, parses its contents, and returns an XML object
+ * @param {string} string 
+ */
 function parseXml(string) {
   const len = string.length;
   let state1 = 0;

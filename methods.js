@@ -1,5 +1,11 @@
 "use strict";
+/**
+#####################################    File Description    #######################################
 
+Method to perform to send to cwmp server to perform
+
+####################################################################################################
+ */
 const http = require("http");
 const https = require("https");
 const xmlParser = require("./xml-parser");
@@ -23,7 +29,12 @@ const INFORM_PARAMS = [
   "Device.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress",
   "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress"
 ];
-
+/**
+ * @description Create and XML document(SOAP message) of a device to send to cwmp. 
+ * @param {object} device  Device object
+ * @param {object} event    Event object
+ * @param {Function} callback Callback when done
+ */
 
 function inform(device, event, callback) {
   let manufacturer = "";
@@ -33,6 +44,8 @@ function inform(device, event, callback) {
       {}, 
       xmlParser.encodeEntities(device["Device.DeviceInfo.Manufacturer"][1])
     );
+// devices may have properties in with different prefix(Device or InternetGatewayDevice)
+// so to handle both 
   } else if (device["InternetGatewayDevice.DeviceInfo.Manufacturer"]) {
     manufacturer = xmlUtils.node(
       "Manufacturer",
@@ -131,19 +144,27 @@ function inform(device, event, callback) {
 
 
 const pending = [];
-
+/**
+ * @description if any tasks ends up in error its pushed as fault to pending 
+ * array this function returns that task
+ */
 function getPending() {
   return pending.shift();
 }
 
-
+// sort devices paths and return
 function getSortedPaths(device) {
   if (!device._sortedPaths)
     device._sortedPaths = Object.keys(device).filter(p => p[0] !== "_").sort();
   return device._sortedPaths;
 }
 
-
+/**
+ * @description Get a device's parameters name
+ * @param {object} device 
+ * @param {object} request 
+ * @param {Function} callback returns parameters name with callback
+ */
 function GetParameterNames(device, request, callback) {
   let parameterNames = getSortedPaths(device);
 
@@ -199,7 +220,7 @@ function GetParameterNames(device, request, callback) {
   return callback(response);
 }
 
-
+// Get params values for device.
 function GetParameterValues(device, request, callback) {
   let parameterNames = request.children[0].children;
 
@@ -228,7 +249,12 @@ function GetParameterValues(device, request, callback) {
   return callback(response);
 }
 
-
+/**
+ * @description Set parameter values on device
+ * @param {*} device 
+ * @param {*} request 
+ * @param {*} callback 
+ */
 function SetParameterValues(device, request, callback) {
   let parameterValues = request.children[0].children;
 
@@ -254,7 +280,12 @@ function SetParameterValues(device, request, callback) {
   return callback(response);
 }
 
-
+/**
+ * @description Function to add some object to device properties
+ * @param {object} device 
+ * @param {object} request 
+ * @param {Function} callback 
+ */
 function AddObject(device, request, callback) {
   let objectName = request.children[0].text;
   let instanceNumber = 1;
@@ -301,7 +332,13 @@ function DeleteObject(device, request, callback) {
   return callback(response);
 }
 
-
+/**
+ * @description function to download any file on device CPE (For downloading 
+ * firmware images upgrades etc) if ends up in fault it pushes fault error in pending array
+ * @param {object} device 
+ * @param {request} request 
+ * @param {Function} callback 
+ */
 function Download(device, request, callback) {
   let commandKey, url;
   for (let c of request.children) {

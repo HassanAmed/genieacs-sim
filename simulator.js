@@ -1,3 +1,11 @@
+/**
+#####################################    File Description    #######################################
+
+Simulator is created in this file. All of functions from creating rpcrequests, sessions to starting
+simulator are implemented here 
+
+####################################################################################################
+ */
 "use strict";
 
 const net = require("net");
@@ -20,8 +28,12 @@ let requestOptions = null;
 let device = null;
 let httpAgent = null;
 let basicAuth;
-
-
+/**
+ * @description Create Soap message. A SOAP message is an XML document that consists of 
+ * a mandatory SOAP envelope an optional SOAP header, and a mandatory SOAP body 
+ * @param {string} id 
+ * @param {any} body 
+ */
 function createSoapDocument(id, body) {
   let headerNode = xmlUtils.node(
     "soap-env:Header",
@@ -38,7 +50,11 @@ function createSoapDocument(id, body) {
 
   return `<?xml version="1.0" encoding="UTF-8"?>\n${env}`;
 }
-
+/**
+ * @description Send a http(SOAP) Post request
+ * @param {string} xml 
+ * @param {function} callback 
+ */
 function sendRequest(xml, callback) {
   let headers = {};
   let body = xml || "";
@@ -100,7 +116,10 @@ function sendRequest(xml, callback) {
 
   return request.end(body);
 }
-
+/**
+ * @description Start session by sending a post request to cwmp-server
+ * @param {object} event
+ */
 function startSession(event) {
   nextInformTimeout = null;
   pendingInform = false;
@@ -114,7 +133,12 @@ function startSession(event) {
   });
 }
 
-
+/**
+ * @description if fault occurs this function creates proper SOAP fault response (SOAP protocol have 
+ * some standrads to be met that is why proper SOAP fault is important.
+ * @param {Number} code 
+ * @param {string} message 
+ */
 function createFaultResponse(code, message) {
   let fault = xmlUtils.node(
     "detail",
@@ -134,7 +158,10 @@ function createFaultResponse(code, message) {
   return soapFault;
 }
 
-
+/**
+ * @description If anything is pending create new CPErequest using sendRequest method
+ * othrwise return null.
+ */
 function cpeRequest() {
   const pending = methods.getPending();
   if (!pending) {
@@ -154,10 +181,13 @@ function cpeRequest() {
   });
 }
 
-
+/**
+ * @description Method handler for cpe requests checks for header and body of xml
+ * @param {any} xml 
+ */
 function handleMethod(xml) {
   if (!xml) {
-    httpAgent.destroy();
+    httpAgent.destroy(); //destroy an instance if no longer in use
     let informInterval = 10;
     if (device["Device.ManagementServer.PeriodicInformInterval"])
       informInterval = parseInt(device["Device.ManagementServer.PeriodicInformInterval"][1]);
@@ -165,7 +195,7 @@ function handleMethod(xml) {
       informInterval = parseInt(device["InternetGatewayDevice.ManagementServer.PeriodicInformInterval"][1]);
 
     nextInformTimeout = setTimeout(function() {
-      startSession();
+      startSession(); // start session again after interval
     }, pendingInform ? 0 : 1000 * informInterval);
 
     return;
@@ -217,7 +247,14 @@ function handleMethod(xml) {
     });
   });
 }
-
+/**
+ * @description Creating a listener to listens to all kinds of requests
+ * (Api requests from genieacs-ui server are handled by this listener)
+ * starts session when connected
+ * @param {string} serialNumber 
+ * @param {URL} acsUrlOptions 
+ * @param {Function} callback 
+ */
 function listenForConnectionRequests(serialNumber, acsUrlOptions, callback) {
   let ip, port;
   // Start a dummy socket to get the used local ip
@@ -257,10 +294,15 @@ function listenForConnectionRequests(serialNumber, acsUrlOptions, callback) {
     });
   });
 }
-
+/**
+ * @description Start a device(simulator along with listener) and  keep session alive
+ * @param {Object} dataModel  device data model
+ * @param {String} serialNumber serial number 
+ * @param {URL} acsUrl cwmp-server url
+ */
 function start(dataModel, serialNumber, acsUrl) {
   device = dataModel;
-
+// assigning properties based on device to pass listener function.
   if (device["Device.DeviceInfo.SerialNumber"])
     device["Device.DeviceInfo.SerialNumber"][1] = serialNumber;
   else if (device["InternetGatewayDevice.DeviceInfo.SerialNumber"])

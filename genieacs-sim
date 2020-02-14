@@ -1,15 +1,23 @@
 #!/usr/bin/env node
+/**
+#####################################    File Description    #######################################
+
+//This is an executable file that runs simulator
+
+####################################################################################################
+ */
 "use strict";
-
+// cluster so that multiple simulator can be run 
+// To run multiple sims just add - p flag so (./geneiacs-sim -p 3) will run 3 sims
 const cluster = require("cluster");
-
+ 
 if (!cluster.isMaster) {
   const simulator = require("./simulator");
 
   const acsUrl = process.env["ACS_URL"];
   const dataModel = process.env["DATA_MODEL"];
   const serialNumber = process.env["SERIAL_NUMBER"];
-
+// Starts  a simulator using dataModel from data_model file
   simulator.start(require(dataModel), serialNumber, acsUrl);
   return;
 }
@@ -19,7 +27,7 @@ const pkg = require("./package.json");
 function resolvePath(p) {
   return require("path").resolve(process.cwd(), p);
 }
-
+//package for node.js command line interfaces.
 const program = require("commander")
   .version(pkg.version)
   .description(pkg.description)
@@ -34,11 +42,12 @@ if (!/^(http|https):\/\//.test(program.acsUrl)) {
   console.error("Invalid ACS URL");
   process.exit(1);
 }
-
+// run a worker/child process for one simulator
 cluster.on("fork", function(worker) {
   console.log(`Simulator ${worker.env["SERIAL_NUMBER"]} started`);
 });
-
+// exit the simulator incase it cwmp-service is not running or it cannot connect to it
+// and restart it on another port
 cluster.on("exit", function(worker, code, signal) {
   console.log(`Simulator ${worker.env["SERIAL_NUMBER"]} died (${signal || code}). Restarting in 10 seconds...`)
   setTimeout(function() {
@@ -47,7 +56,7 @@ cluster.on("exit", function(worker, code, signal) {
   }, 10000);
 });
 
-
+// Set Timeout 
 for (let i = 0; i < program.processes; ++ i) {
   setTimeout(function() {
     let env = {
